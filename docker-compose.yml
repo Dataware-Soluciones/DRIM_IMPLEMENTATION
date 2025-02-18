@@ -1,0 +1,75 @@
+services:
+  drim-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    ports:
+      - 1434:1433
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+    volumes:
+      - drim-db-data:/var/opt/mssql
+    networks:
+      - default
+    restart: always
+
+  drim-api:
+    container_name: drim-api
+    image: datawaresit/drim-back:latest
+    ports:
+      - 8090:8080
+    depends_on:
+      - drim-db
+    environment:
+      - DB_HOST=drim-db
+      - DB_NAME=DRIM
+      - DB_USER=sa
+      - DB_PASSWORD=${DB_PASSWORD}
+      - FRONT_URL=${FRONT_URL}
+    networks:
+      - default
+    restart: always
+
+  pm-api:
+    container_name: pm-api
+    image: datawaresit/drim-pm:latest
+    ports:
+      - 8091:8080
+    depends_on:
+      - drim-db
+    environment:
+      - DB_HOST=drim-db
+      - DB_NAME=PM_API
+      - DB_USER=sa
+      - DB_PASSWORD=${DB_PASSWORD}
+      - FRONT_URL=${FRONT_URL}
+    networks:
+      - default
+    restart: always
+
+  drim-front:
+    container_name: drim-front
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${DRIM_API_URL}  # Se pasa como argumento a la build
+        NEXT_PUBLIC_API_URL2: ${PM_API_URL}  # Se pasa como argumento a la build
+    ports:
+      - "8089:8080"
+    depends_on:
+      - pm-api
+      - drim-api
+    environment:
+      - NEXT_PUBLIC_API_URL=${DRIM_API_URL}  # Se usa en tiempo de ejecución
+      - NEXT_PUBLIC_API_URL2=${PM_API_URL}  # Se usa en tiempo de ejecución
+    networks:
+      - default
+    restart: always
+
+volumes:
+  drim-db-data:
+    external: false
+
+networks:
+  default:
+    driver: bridge
