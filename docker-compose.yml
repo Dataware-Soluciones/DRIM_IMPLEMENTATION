@@ -1,49 +1,57 @@
 services:
   drim-db:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: drim-db
     ports:
-      - 1434:1433
+      - "1434:1433"
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
     volumes:
       - drim-db-data:/var/opt/mssql
     networks:
-      - default
+      - drim-network
     restart: always
+    healthcheck:
+      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
 
   drim-api:
     container_name: drim-api
     image: datawaresit/drim-back:latest
     ports:
-      - 8090:8080
+      - "8090:8080"
     depends_on:
-      - drim-db
+      drim-db:
+        condition: service_healthy
     environment:
-      - DB_HOST=drim-db
-      - DB_NAME=DRIM
-      - DB_USER=sa
-      - DB_PASSWORD=${DB_PASSWORD}
-      - FRONT_URL=${FRONT_URL}
+      DB_HOST: "drim-db"
+      DB_NAME: "DRIM"
+      DB_USER: "sa"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      FRONT_URL: "${FRONT_URL}"
     networks:
-      - default
+      - drim-network
     restart: always
 
   pm-api:
     container_name: pm-api
     image: datawaresit/drim-pm:latest
     ports:
-      - 8091:8080
+      - "8091:8080"
     depends_on:
-      - drim-db
+      drim-db:
+        condition: service_healthy
     environment:
-      - DB_HOST=drim-db
-      - DB_NAME=PM_API
-      - DB_USER=sa
-      - DB_PASSWORD=${DB_PASSWORD}
-      - FRONT_URL=${FRONT_URL}
+      DB_HOST: "drim-db"
+      DB_NAME: "PM_API"
+      DB_USER: "sa"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      FRONT_URL: "${FRONT_URL}"
     networks:
-      - default
+      - drim-network
     restart: always
 
   drim-front:
@@ -52,24 +60,25 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${DRIM_API_URL}  # Se pasa como argumento a la build
-        NEXT_PUBLIC_API_URL2: ${PM_API_URL}  # Se pasa como argumento a la build
+        NEXT_PUBLIC_API_URL: "${DRIM_API_URL}"
+        NEXT_PUBLIC_API_URL2: "${PM_API_URL}"
     ports:
       - "8089:8080"
     depends_on:
-      - pm-api
-      - drim-api
+      drim-api:
+        condition: service_started
+      pm-api:
+        condition: service_started
     environment:
-      - NEXT_PUBLIC_API_URL=${DRIM_API_URL}  # Se usa en tiempo de ejecución
-      - NEXT_PUBLIC_API_URL2=${PM_API_URL}  # Se usa en tiempo de ejecución
+      NEXT_PUBLIC_API_URL: "${DRIM_API_URL}"
+      NEXT_PUBLIC_API_URL2: "${PM_API_URL}"
     networks:
-      - default
+      - drim-network
     restart: always
 
 volumes:
   drim-db-data:
-    external: false
 
 networks:
-  default:
+  drim-network:
     driver: bridge
