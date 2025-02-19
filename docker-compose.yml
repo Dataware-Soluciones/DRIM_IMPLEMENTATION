@@ -12,12 +12,6 @@ services:
     networks:
       - drim-network
     restart: always
-    healthcheck:
-      test: ["CMD", "/opt/mssql-tools/bin/sqlcmd", "-S", "localhost", "-U", "sa", "-P", "${MSSQL_SA_PASSWORD}", "-Q", "SELECT 1"]
-      interval: 10s
-      retries: 5
-      start_period: 10s
-
   drim-api:
     container_name: drim-api
     image: datawaresit/drim-back:latest
