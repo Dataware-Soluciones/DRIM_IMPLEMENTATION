@@ -7,6 +7,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "${MSSQL_SA_PASSWORD}"
+      TZ: "America/Mexico_City"
     volumes:
       - drim-db-data:/var/opt/mssql
     networks:
@@ -26,6 +27,7 @@ services:
       DB_USER: "sa"
       DB_PASSWORD: "${DB_PASSWORD}"
       FRONT_URL: "${FRONT_URL}"
+      TZ: "America/Mexico_City"
     networks:
       - drim-network
     restart: always
@@ -43,6 +45,7 @@ services:
       DB_USER: "sa"
       DB_PASSWORD: "${DB_PASSWORD}"
       FRONT_URL: "${FRONT_URL}"
+      TZ: "America/Mexico_City"
     networks:
       - drim-network
     restart: always
@@ -65,6 +68,7 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: "${DRIM_API_URL}"
       NEXT_PUBLIC_API_URL2: "${PM_API_URL}"
+      TZ: "America/Mexico_City"
     networks:
       - drim-network
     restart: always
