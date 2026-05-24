@@ -1,4 +1,16 @@
+# ==================================================
+# DRIM - Docker Compose (Producción On-Premise)
+# ==================================================
+# Uso:
+#   Implementación:  ./scripts/deploy.sh
+#   Actualización:   ./scripts/update.sh
+#   Solo migraciones: ./scripts/migrate.sh
+#
+# Variables de entorno requeridas (ver .env.example):
+#   MSSQL_SA_PASSWORD, DB_PASSWORD, FRONT_URL, DRIM_API_URL, PM_API_URL
+
 services:
+  # ─── Base de datos ──────────────────────────────────────
   drim-db:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: drim-db
@@ -12,16 +24,25 @@ services:
       - drim-db-data:/var/opt/mssql
     networks:
       - drim-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$${MSSQL_SA_PASSWORD}" -C -Q "SELECT 1" -b || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     restart: always
 
+  # ─── API Principal (DRIMBack) ───────────────────────────
   drim-api:
     container_name: drim-api
     image: datawaresit/drim-back:latest
     ports:
       - "8090:8080"
     depends_on:
-      - drim-db
+      drim-db:
+        condition: service_healthy
     environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
       DB_HOST: "drim-db"
       DB_NAME: "DRIM"
       DB_USER: "sa"
@@ -30,16 +51,25 @@ services:
       TZ: "America/Mexico_City"
     networks:
       - drim-network
+    healthcheck:
+      test: curl -f http://localhost:8080/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: always
 
+  # ─── API de Impresoras (PM_Printer_API) ─────────────────
   pm-api:
     container_name: pm-api
     image: datawaresit/drim-pm:latest
     ports:
       - "8091:8080"
     depends_on:
-      - drim-db
+      drim-db:
+        condition: service_healthy
     environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
       DB_HOST: "drim-db"
       DB_NAME: "PM_API"
       DB_USER: "sa"
@@ -48,8 +78,15 @@ services:
       TZ: "America/Mexico_City"
     networks:
       - drim-network
+    healthcheck:
+      test: curl -f http://localhost:8080/health || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: always
 
+  # ─── Frontend (DRIMFront) ───────────────────────────────
   drim-front:
     container_name: drim-front
     build:
@@ -62,15 +99,21 @@ services:
       - "8089:8080"
     depends_on:
       drim-api:
-        condition: service_started
+        condition: service_healthy
       pm-api:
-        condition: service_started
+        condition: service_healthy
     environment:
       NEXT_PUBLIC_API_URL: "${DRIM_API_URL}"
       NEXT_PUBLIC_API_URL2: "${PM_API_URL}"
       TZ: "America/Mexico_City"
     networks:
       - drim-network
+    healthcheck:
+      test: curl -f http://localhost:8080/ || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     restart: always
 
 volumes:
