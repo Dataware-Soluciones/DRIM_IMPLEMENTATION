@@ -121,4 +121,5 @@ volumes:
 
 networks:
   drim-network:
+    name: drim-network
     driver: bridge

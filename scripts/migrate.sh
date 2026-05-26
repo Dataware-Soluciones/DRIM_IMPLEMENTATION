@@ -56,6 +56,7 @@ docker run --rm \
   -e DB_NAME="${DB_NAME:-DRIM}" \
   -e DB_USER="sa" \
   -e DB_PASSWORD="${DB_PASSWORD}" \
+  -e FRONT_URL="${FRONT_URL}" \
   -e ASPNETCORE_ENVIRONMENT="Production" \
   datawaresit/drim-back:latest \
   dotnet DRIMBack.dll --migrate-only
@@ -73,6 +74,7 @@ docker run --rm \
   -e DB_NAME="${PM_DB_NAME:-PM_API}" \
   -e DB_USER="sa" \
   -e DB_PASSWORD="${DB_PASSWORD}" \
+  -e FRONT_URL="${FRONT_URL}" \
   -e ASPNETCORE_ENVIRONMENT="Production" \
   datawaresit/drim-pm:latest \
   dotnet PM_Printer_API.dll --migrate-only
