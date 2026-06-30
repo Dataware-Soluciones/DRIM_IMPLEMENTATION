@@ -29,6 +29,25 @@ cd "$INSTALL_DIR"
 [[ -f ".env" ]] || die ".env file not found. Create one from .env.example"
 command -v docker >/dev/null 2>&1 || die "Docker is not installed."
 
+# Preflight: validar politica de complejidad de MSSQL_SA_PASSWORD
+# (SQL Server la rechaza si no cumple, y el contenedor entra en crash-loop
+#  sin avisar nada util hasta que revisas el log con docker logs drim-db)
+set -a
+source .env
+set +a
+if [[ -z "${MSSQL_SA_PASSWORD:-}" ]]; then
+  die "MSSQL_SA_PASSWORD no esta definido en .env."
+fi
+pw_len=${#MSSQL_SA_PASSWORD}
+pw_categories=0
+[[ "$MSSQL_SA_PASSWORD" =~ [A-Z] ]] && ((pw_categories++)) || true
+[[ "$MSSQL_SA_PASSWORD" =~ [a-z] ]] && ((pw_categories++)) || true
+[[ "$MSSQL_SA_PASSWORD" =~ [0-9] ]] && ((pw_categories++)) || true
+[[ "$MSSQL_SA_PASSWORD" =~ [^a-zA-Z0-9] ]] && ((pw_categories++)) || true
+if (( pw_len < 8 )) || (( pw_categories < 3 )); then
+  die "MSSQL_SA_PASSWORD no cumple la politica de complejidad de SQL Server (minimo 8 caracteres y al menos 3 de: mayusculas, minusculas, numeros, simbolos). Corrige el .env antes de continuar."
+fi
+
 # Step 1: Start database only
 log_info "=== Step 1: Levantando base de datos ==="
 docker_compose -f "$DOCKER_COMPOSE_FILE" up -d drim-db
@@ -64,8 +83,20 @@ done
 log_info "=== Step 2: Ejecutando migraciones ==="
 bash "$SCRIPT_DIR/migrate.sh"
 
-# Step 3: Start all services
-log_info "=== Step 3: Levantando todos los servicios ==="
+# Step 3: Prepare frontend source (build context required by docker-compose.yml)
+FRONT_ZIP_NAME="${FRONT_ZIP_NAME:-DRIMFront.zip}"
+if [[ ! -d "frontend" ]]; then
+  log_info "=== Step 3: Preparando frontend (no existe carpeta frontend/) ==="
+  [[ -f "$FRONT_ZIP_NAME" ]] || die "No existe la carpeta 'frontend' ni el archivo $FRONT_ZIP_NAME para crearla. Coloca $FRONT_ZIP_NAME en $INSTALL_DIR."
+  mkdir -p frontend
+  unzip -o "$FRONT_ZIP_NAME" -d frontend
+  log_info "Frontend extraido en ./frontend"
+else
+  log_info "=== Step 3: Carpeta frontend ya existe, se reutiliza ==="
+fi
+
+# Step 4: Start all services
+log_info "=== Step 4: Levantando todos los servicios ==="
 docker_compose -f "$DOCKER_COMPOSE_FILE" up -d --build
 
 log_info "Esperando 15 segundos para estabilizacion..."
