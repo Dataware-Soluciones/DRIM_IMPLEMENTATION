@@ -43,7 +43,18 @@ for i in $(seq 1 $MAX_RETRIES); do
     break
   fi
   if [[ $i -eq $MAX_RETRIES ]]; then
-    die "drim-db no alcanzo estado healthy despues de $((MAX_RETRIES * RETRY_INTERVAL)) segundos."
+    log_error "drim-db no alcanzo estado healthy despues de $((MAX_RETRIES * RETRY_INTERVAL)) segundos."
+    log_error "=== Diagnostico automatico ==="
+    log_error "--- docker ps -a (drim-db) ---"
+    docker ps -a --filter "name=drim-db" --format "table {{.Names}}\t{{.Status}}\t{{.RunningFor}}" >&2 || true
+    log_error "--- Espacio en disco ---"
+    df -h / >&2 || true
+    log_error "--- Memoria disponible ---"
+    free -h >&2 || true
+    log_error "--- Ultimas 60 lineas de log de drim-db ---"
+    docker logs --tail 60 drim-db >&2 || true
+    log_error "================================"
+    die "Revisa el log de arriba. Causas tipicas: volumen de datos danado por un deploy interrumpido, MSSQL_SA_PASSWORD distinto al usado cuando se creo el volumen, disco/RAM agotados, o puerto 1434 ocupado."
   fi
   printf '[INFO]  Esperando... (intento %d/%d, estado: %s)\n' "$i" "$MAX_RETRIES" "$STATUS"
   sleep $RETRY_INTERVAL
