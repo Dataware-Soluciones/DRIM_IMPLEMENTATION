@@ -19,6 +19,10 @@ Se pueden usar imágenes de otro registro mediante `DRIM_BACK_IMAGE` y `DRIM_PM_
 
 ## Instalar o actualizar
 
-Configura `.env` con `MSSQL_SA_PASSWORD`, `DB_PASSWORD`, `FRONT_URL`, `DRIM_API_URL` y `PM_API_URL`. Las URL públicas deben ser accesibles desde el navegador de los usuarios. Después ejecuta `./scripts/deploy.sh` para una instalación nueva o `./scripts/update.sh` para actualizar. Los scripts descargan las imágenes antes de migrar las bases de datos.
+Configura `.env` con `MSSQL_SA_PASSWORD`, `DB_PASSWORD`, `FRONT_URL`, `DRIM_API_URL`, `PM_API_URL` y `JWT_SECRET`. Genera una llave ASCII aleatoria de al menos 32 caracteres, por ejemplo con `openssl rand -hex 32`. Compose pasa la misma llave a DRIMBack (`JwtSettings__Secret`) y PM (`JWT_SECRET`), y conecta PM con `http://drim-api:8080`. Así el frontend detecta el modo DRIM completo y el login usa los usuarios de DRIMBack. No cambies esa llave sin planear el cierre de las sesiones existentes.
+
+`PM_JWT_SECRET` es una llave **distinta y opcional**, solo para que PM emita sesiones de operadores propios. Si se usa, debe tener al menos 32 caracteres; `PM_ADMIN_USER` y `PM_ADMIN_PASSWORD` pueden crear el primer operador cuando su tabla está vacía. No sustituyas `JWT_SECRET` por `PM_JWT_SECRET` en la instalación completa.
+
+Las URL públicas deben ser accesibles desde el navegador de los usuarios. Después ejecuta `./scripts/deploy.sh` para una instalación nueva o `./scripts/update.sh` para actualizar. Los scripts descargan las imágenes antes de migrar las bases de datos.
 
 El servicio MQTT publica el puerto `1883`. La configuración incluida permite conexiones anónimas, igual que el compose de PPME; ajusta `mosquitto.conf` y el acceso de red según el entorno de despliegue.

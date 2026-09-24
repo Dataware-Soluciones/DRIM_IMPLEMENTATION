@@ -62,6 +62,7 @@ services:
       DB_USER: "sa"
       DB_PASSWORD: "${DB_PASSWORD}"
       FRONT_URL: "${FRONT_URL}"
+      JwtSettings__Secret: "${JWT_SECRET:?Define JWT_SECRET en .env para DRIMBack y PM}"
       MQTT_HOST: "drim-mqtt"
       MQTT_PORT: "1883"
       MQTT_USER: "${MQTT_USER:-}"
@@ -93,6 +94,11 @@ services:
       DB_USER: "sa"
       DB_PASSWORD: "${DB_PASSWORD}"
       FRONT_URL: "${FRONT_URL}"
+      JWT_SECRET: "${JWT_SECRET:?Define JWT_SECRET en .env para DRIMBack y PM}"
+      DRIM_API_URL: "http://drim-api:8080"
+      PM_JWT_SECRET: "${PM_JWT_SECRET:-}"
+      PM_ADMIN_USER: "${PM_ADMIN_USER:-}"
+      PM_ADMIN_PASSWORD: "${PM_ADMIN_PASSWORD:-}"
       TZ: "America/Mexico_City"
     networks:
       - drim-network
