@@ -58,7 +58,7 @@ docker run --rm \
   -e DB_PASSWORD="${DB_PASSWORD}" \
   -e FRONT_URL="${FRONT_URL}" \
   -e ASPNETCORE_ENVIRONMENT="Production" \
-  datawaresit/drim-back:latest \
+  "${DRIM_BACK_IMAGE:-datawaresit/drim-back:ppme}" \
   dotnet DRIMBack.dll --migrate-only
 
 if [[ $? -ne 0 ]]; then
@@ -76,7 +76,7 @@ docker run --rm \
   -e DB_PASSWORD="${DB_PASSWORD}" \
   -e FRONT_URL="${FRONT_URL}" \
   -e ASPNETCORE_ENVIRONMENT="Production" \
-  datawaresit/drim-pm:latest \
+  "${DRIM_PM_IMAGE:-datawaresit/drim-pm:ppme}" \
   dotnet PM_Printer_API.dll --migrate-only
 
 if [[ $? -ne 0 ]]; then

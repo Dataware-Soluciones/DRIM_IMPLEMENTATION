@@ -28,6 +28,7 @@ cd "$INSTALL_DIR"
 [[ -f "$DOCKER_COMPOSE_FILE" ]] || die "Compose file not found: $DOCKER_COMPOSE_FILE"
 [[ -f ".env" ]] || die ".env file not found. Create one from .env.example"
 command -v docker >/dev/null 2>&1 || die "Docker is not installed."
+[[ -f "mosquitto/mosquitto.conf" ]] || die "Falta mosquitto/mosquitto.conf."
 
 # Preflight: validar politica de complejidad de MSSQL_SA_PASSWORD
 # (SQL Server la rechaza si no cumple, y el contenedor entra en crash-loop
@@ -81,6 +82,7 @@ done
 
 # Step 2: Run migrations
 log_info "=== Step 2: Ejecutando migraciones ==="
+docker_compose -f "$DOCKER_COMPOSE_FILE" pull drim-api pm-api
 bash "$SCRIPT_DIR/migrate.sh"
 
 # Step 3: Prepare frontend source (build context required by docker-compose.yml)

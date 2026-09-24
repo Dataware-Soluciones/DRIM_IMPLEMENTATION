@@ -33,7 +33,7 @@ command -v docker >/dev/null 2>&1 || die "Docker is not installed."
 
 # Step 1: Pull new images
 log_info "=== Step 1: Descargando imagenes actualizadas ==="
-docker_compose -f "$DOCKER_COMPOSE_FILE" pull drim-api pm-api || log_warn "No se pudieron descargar algunas imagenes. Continuando con las locales."
+docker_compose -f "$DOCKER_COMPOSE_FILE" pull drim-api pm-api || die "No se pudieron descargar las imagenes PPME; se cancela antes de migrar la BD."
 
 # Step 2: Update frontend source (if zip exists)
 if [[ -f "$FRONT_ZIP_NAME" ]]; then
